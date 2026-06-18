@@ -1,4 +1,4 @@
-# ADHDAssist (adhdtm)
+# Tola (ADHDAssist)
 
 A playful and feature-rich task management application designed to help users with ADHD stay organized, motivated, and productive.
 
