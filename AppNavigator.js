@@ -20,6 +20,7 @@ import GameScreen from './screens/GameScreen';
 import UserProfileScreen from './screens/UserScreen'; // Import UserProfileScreen
 import { auth } from './firebase';
 import CompletedTasksScreen from './screens/CompletedTasksScreen';
+import { COLORS, FONTS, SPACING } from './utils/theme';
 
 
 
@@ -42,48 +43,104 @@ const Drawer = createDrawerNavigator();
 const HomeStackNavigator = () => (
   <Stack.Navigator>
     <Stack.Screen
-      name="Home"
+      name="HomeScreen"
       component={HomeScreen}
       options={{
         headerTitle: () => <MotivationalHeader />,
+        headerTitleAlign: 'center',
         headerStyle: {
-          backgroundColor: 'skyblue', // Adjust as needed
+          backgroundColor: COLORS.primary,
         },
       }}
     />
-    <Stack.Screen name="UpdateTask" component={UpdateTaskScreen} />
+    <Stack.Screen 
+      name="UpdateTask" 
+      component={UpdateTaskScreen} 
+      options={{ 
+        title: 'Task Details',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
+    />
   </Stack.Navigator>
 );
 
 const TaskCStackNavigator = () => (
   <Stack.Navigator>
     <Stack.Screen
-      name="Completed Tasks"
+      name="CompletedTasks"
       component={CompletedTasksScreen}
-      options={{ headerShown:false }} 
+      options={{ 
+        headerShown: true, 
+        title: 'Mission History',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
     />
-    <Stack.Screen name="UpdateTask" component={UpdateTaskScreen} />
+    <Stack.Screen 
+      name="UpdateTask" 
+      component={UpdateTaskScreen} 
+      options={{ 
+        title: 'Task Details',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
+    />
   </Stack.Navigator>
 );
 
 const TaskStackNavigator = () => (
   <Stack.Navigator >
-    <Stack.Screen options={{ headerShown:false }} name="TaskList" component={TaskListScreen} />
-    <Stack.Screen name="UpdateTask" component={UpdateTaskScreen} />
-    <Stack.Screen name="AddTask" component={AddTaskScreen} />
+    <Stack.Screen 
+      name="TaskList" 
+      component={TaskListScreen} 
+      options={{ 
+        title: 'Mission Control',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
+    />
+    <Stack.Screen 
+      name="UpdateTask" 
+      component={UpdateTaskScreen} 
+      options={{ 
+        title: 'Update Mission',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
+    />
+    <Stack.Screen 
+      name="AddTask" 
+      component={AddTaskScreen} 
+      options={{ 
+        title: 'New Mission',
+        headerTitleStyle: { fontFamily: FONTS.bubbles, color: COLORS.white },
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white
+      }} 
+    />
   </Stack.Navigator>
 );
 
-
 const DrawerNavigator = () => (
   <Drawer.Navigator
-    initialRouteName="Home"
+    initialRouteName="Main"
     drawerContent={(props) => <CustomDrawerContent {...props} />}
     screenOptions={({ route }) => ({
+      headerStyle: { backgroundColor: COLORS.primary },
+      headerTintColor: COLORS.white,
+      headerTitleStyle: { fontFamily: FONTS.bubbles },
+      drawerActiveTintColor: COLORS.primary,
+      drawerInactiveTintColor: COLORS.textSecondary,
       drawerIcon: ({ color, size }) => {
         let iconName;
         switch (route.name) {
-          case 'Home':
+          case 'Main':
             iconName = 'home';
             return <FontAwesome5 name={iconName} size={size} color={color} />;
           case 'Game':
@@ -106,10 +163,10 @@ const DrawerNavigator = () => (
   >
    
     <Drawer.Screen
-      name="Home" 
+      name="Main" 
       component={TabNavigator}
       options={{
-        title: 'Home', // Hide the text label for Home
+        title: 'Home', // Label for the drawer
         headerShown: false, // Hide the header when navigating to Home
       }}
     />
@@ -121,11 +178,23 @@ const DrawerNavigator = () => (
 );
 
 const TabNavigator = () => (
-  <Tab.Navigator>
+  <Tab.Navigator
+    screenOptions={{
+      tabBarActiveTintColor: COLORS.primary,
+      tabBarInactiveTintColor: COLORS.textSecondary,
+      tabBarStyle: {
+        backgroundColor: COLORS.white,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
+      },
+      headerShown: false,
+    }}
+  >
     <Tab.Screen
-      name="Home"
+      name="HomeStack"
       component={HomeStackNavigator}
       options={{ 
+        title: 'Home', // Label for the tab bar
         tabBarIcon: ({ color, size }) => (
           <FontAwesome5 name="home" size={size} color={color} />
         ),
@@ -183,7 +252,7 @@ const AppNavigator = () => {
       <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelAppScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Home" component={DrawerNavigator} />
+        <Stack.Screen name="AppDrawer" component={DrawerNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -191,15 +260,14 @@ const AppNavigator = () => {
 
 const styles = StyleSheet.create({
   drawerHeader: {
-    padding: 20,
-    backgroundColor: 'lightblue', // Background color of the drawer header
+    padding: SPACING.l,
+    backgroundColor: COLORS.primary, // Background color of the drawer header
   },
   drawerTitle: {
-    fontSize: 24,
-    fontFamily: 'RubikBubbles-Regular',
+    fontSize: 32,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.white,
   },
 });
 
 export default AppNavigator;
-
-

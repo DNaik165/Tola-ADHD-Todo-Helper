@@ -1,8 +1,7 @@
-// components/MotivationalHeader.js
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { fetchMotivationalQuote } from '../utils/fetchQuotes'; // Adjust path as needed
+import { fetchMotivationalQuote } from '../utils/fetchQuotes'; 
+import { COLORS, FONTS, SPACING } from '../utils/theme';
 
 const MotivationalHeader = () => {
   const [quote, setQuote] = useState('');
@@ -13,15 +12,10 @@ const MotivationalHeader = () => {
   };
 
   useEffect(() => {
-    // Fetch quote initially
     getQuote();
-
-    // Set interval to fetch new quote every hour (3600000 ms)
     const intervalId = setInterval(() => {
       getQuote();
     }, 3600000);
-
-    // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
@@ -34,14 +28,16 @@ const MotivationalHeader = () => {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    padding: 10,
-    backgroundColor: 'skyblue',
+    paddingVertical: SPACING.s,
+    paddingHorizontal: SPACING.m,
+    backgroundColor: 'transparent',
   },
   quoteText: {
     fontSize: 16,
-    color: '#fff',
+    color: COLORS.white,
     textAlign: 'center',
     fontStyle: 'italic',
+    fontFamily: FONTS.regular,
   },
 });
 

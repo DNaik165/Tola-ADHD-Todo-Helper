@@ -1,12 +1,13 @@
 // // // screens/AuthScreen.js
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { auth, firestore } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+import { COLORS, FONTS, SHADOWS, SPACING } from '../utils/theme';
 
 const AuthScreen = () => {
   const [email, setEmail] = useState('');
@@ -58,134 +59,186 @@ const AuthScreen = () => {
         login(email, password); // Update context with login info
       }
 
-      navigation.navigate('Home');
+      // Navigate to the unique AppDrawer route
+      navigation.navigate('AppDrawer');
     } catch (error) {
       setError(getErrorMessage(error.code));
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      logout(); // Clear auth state
-      setEmail('');
-      setPassword('');
-      setName('');
-      setError(null); // Clear error on logout
-      navigation.navigate('Auth');
-    } catch (error) {
-      console.error('Error signing out: ', error);
-      Alert.alert('Error', 'Failed to log out. Please try again.');
     }
   };
 
   const getErrorMessage = (code) => {
     switch (code) {
       case 'auth/invalid-email':
-        return 'The email address is not valid. Please check and try again.';
+        return 'The email address is not valid.';
       case 'auth/user-not-found':
-        return 'No user found with this email address. Please register first.';
+        return 'No user found with this email.';
       case 'auth/wrong-password':
-        return 'The password is incorrect. Please try again.';
+        return 'Incorrect password.';
       case 'auth/email-already-in-use':
-        return 'This email address is already in use. Please use a different email.';
+        return 'Email already in use.';
       case 'auth/weak-password':
-        return 'The password is too weak. Please choose a stronger password.';
+        return 'Password is too weak.';
       default:
-        return 'An unknown error occurred. Please try again.';
+        return 'An unknown error occurred.';
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{isRegistering ? 'Register' : 'Login'}</Text>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Tola</Text>
+          <Text style={styles.subtitle}>{isRegistering ? 'Create your account' : 'Welcome back!'}</Text>
+        </View>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+        <View style={styles.formContainer}>
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-      {isRegistering && (
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-        />
-      )}
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleAuth}>
-        <Text style={styles.buttonText}>{isRegistering ? 'Register' : 'Login'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.switchButton} onPress={() => setIsRegistering(!isRegistering)}>
-        <Text style={styles.switchText}>
-          {isRegistering ? 'Already have an account? Login' : "Don't have an account? Register"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+          {isRegistering && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Your name"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
+            <Text style={styles.authButtonText}>{isRegistering ? 'Get Started' : 'Sign In'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.switchButton} onPress={() => setIsRegistering(!isRegistering)}>
+            <Text style={styles.switchText}>
+              {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
+    padding: SPACING.l,
+  },
+  headerContainer: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f7f7f7',
+    marginBottom: SPACING.xl,
   },
   title: {
-    fontSize: 28,
-    marginBottom: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 48,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.primary,
+    marginBottom: SPACING.xs,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+  },
+  formContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 30,
+    padding: SPACING.l,
+    ...SHADOWS.medium,
+  },
+  errorBanner: {
+    backgroundColor: '#FFE4E1',
+    padding: SPACING.s,
+    borderRadius: 10,
+    marginBottom: SPACING.m,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.danger,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+  },
+  inputContainer: {
+    marginBottom: SPACING.m,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+    marginLeft: 4,
   },
   input: {
     width: '100%',
     padding: 15,
-    marginBottom: 15,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    borderColor: COLORS.background,
+    borderWidth: 2,
+    borderRadius: 15,
+    backgroundColor: COLORS.background,
     fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textPrimary,
   },
-  button: {
+  authButton: {
     width: '100%',
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: '#007bff',
+    padding: 18,
+    borderRadius: 15,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
-    marginBottom: 15,
+    marginTop: SPACING.m,
+    ...SHADOWS.light,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  authButtonText: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontFamily: FONTS.bubbles,
   },
   switchButton: {
-    marginTop: 15,
+    marginTop: SPACING.l,
+    alignItems: 'center',
   },
   switchText: {
-    color: '#007bff',
+    color: COLORS.primary,
     fontSize: 16,
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 15,
+    fontFamily: FONTS.regular,
   },
 });
 
 export default AuthScreen;
-

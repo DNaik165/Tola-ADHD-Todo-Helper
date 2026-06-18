@@ -1,22 +1,14 @@
 // // // // screens/UpdateTaskScreen.js
 
 import React, { useState, useContext } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Modal, Button, Image, Share, ScrollView } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Modal, Image, Share, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { TaskContext } from '../context/TaskContext';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
-
-
-
-const priorityColors = {
-  1: 'crimson', // High
-  2: 'plum', // Medium
-  3: 'pink', // Low
-};
-
+import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { COLORS, FONTS, SHADOWS, SPACING } from '../utils/theme';
 
 const UpdateTaskScreen = ({ route, navigation }) => {
   const { task } = route.params;
@@ -26,15 +18,18 @@ const UpdateTaskScreen = ({ route, navigation }) => {
   const [taskDetails, setTaskDetails] = useState(task.taskDetails);
   const [taskStatus, setTaskStatus] = useState(task.myStatus);
   const [taskDate, setTaskDate] = useState(new Date(task.date));
-  const [taskPriority, setTaskPriority] =  useState(task.priority);
+  const [taskPriority, setTaskPriority] = useState(task.priority);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [attachments, setAttachments] = useState(task.attachments || []);
   const [selectedAttachment, setSelectedAttachment] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  
 
   const handleUpdateTask = () => {
+    if (!taskName.trim()) {
+      alert('Please enter a task name');
+      return;
+    }
     const updatedTask = {
       ...task,
       taskName,
@@ -62,12 +57,11 @@ const UpdateTaskScreen = ({ route, navigation }) => {
 
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      quality: 0.7,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const { uri } = result.assets[0];
-      setAttachments([...attachments, { uri }]);
+      setAttachments([...attachments, { uri: result.assets[0].uri }]);
     }
     setShowAttachmentModal(false);
   };
@@ -81,12 +75,11 @@ const UpdateTaskScreen = ({ route, navigation }) => {
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      quality: 0.7,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const { uri } = result.assets[0];
-      setAttachments([...attachments, { uri }]);
+      setAttachments([...attachments, { uri: result.assets[0].uri }]);
     }
     setShowAttachmentModal(false);
   };
@@ -94,10 +87,8 @@ const UpdateTaskScreen = ({ route, navigation }) => {
   const handlePickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync();
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const file = result.assets[0];
-        setAttachments([...attachments, { uri: file.uri }]);
+        setAttachments([...attachments, { uri: result.assets[0].uri }]);
       }
     } catch (error) {
       console.error('Error picking file:', error);
@@ -107,16 +98,13 @@ const UpdateTaskScreen = ({ route, navigation }) => {
 
   const handleAttachmentPress = (attachment) => {
     setSelectedAttachment(attachment);
-    console.log('Selected Attachment:', attachment);
     setShowPreviewModal(true);
   };
 
   const handleShareAttachment = async () => {
     if (selectedAttachment) {
       try {
-        await Share.share({
-          url: selectedAttachment.uri,
-        });
+        await Share.share({ url: selectedAttachment.uri });
       } catch (error) {
         console.error('Error sharing attachment:', error);
       }
@@ -128,343 +116,402 @@ const UpdateTaskScreen = ({ route, navigation }) => {
     setShowPreviewModal(false);
   };
 
- 
-  
-  
   return (
-    <ScrollView>
-    <View style={styles.container}>
-      <TextInput
-        placeholder="Task Name"
-        value={taskName}
-        onChangeText={setTaskName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Task Details"
-        value={taskDetails}
-        onChangeText={setTaskDetails}
-        style={styles.textArea}
-        multiline
-      />
-      <View style={styles.pickerContainer}>
-        <Text>Status:</Text>
-        <Picker
-          selectedValue={taskStatus}
-          style={styles.picker}
-          onValueChange={(itemValue) => setTaskStatus(itemValue)}
-        >
-          <Picker.Item label="Pending" value="Pending" />
-          <Picker.Item label="In Progress" value="Progress" />
-          <Picker.Item label="Done" value="Done" />
-        </Picker>
-      </View>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Update Task</Text>
+          <Text style={styles.headerSubtitle}>Keep making progress!</Text>
+        </View>
 
-      <View style={styles.pickerContainer}>
-        <Text>Priority:</Text>
-        <Picker
-          selectedValue={taskPriority}
-          style={styles.picker}
-          onValueChange={(itemValue) => setTaskPriority(itemValue)}
-        >
-          <Picker.Item label="High" value={1} color={priorityColors[1]}/>
-          <Picker.Item label="Medium" value={2} color={priorityColors[2]}/>
-          <Picker.Item label="Low" value={3} color={priorityColors[3]}/>
-        </Picker>
-      </View>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setShowDatePicker(true)}
-      >
-        <Text style={styles.buttonText}>Select Date</Text>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={taskDate}
-          mode="date"
-          display="calendar"
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) {
-              setTaskDate(selectedDate);
-            }
-          }}
-        />
-      )}
-
-      <Text style={styles.dateText}>
-        {taskDate.toISOString().split('T')[0]}
-      </Text>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setShowAttachmentModal(true)}
-      >
-        <Text style={styles.buttonTextD}>Add Attachment</Text>
-      </TouchableOpacity>
-
-      {attachments.length > 0 && (
-  <View style={styles.attachmentsContainer}>
-    {attachments.map((attachment, index) => {
-      console.log('Attachments:', attachments); // Log all attachments
-      return (
-        <TouchableOpacity key={index} onPress={() => handleAttachmentPress(attachment)}>
-          <Image
-            source={{ uri: attachment.uri }}
-            style={styles.attachmentImage}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Task Name</Text>
+          <TextInput
+            placeholder="Task Name"
+            value={taskName}
+            onChangeText={setTaskName}
+            style={styles.input}
+            placeholderTextColor={COLORS.textSecondary}
           />
-        </TouchableOpacity>
-      );
-    })}
-  </View>
-)}
+        </View>
 
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Task Details</Text>
+          <TextInput
+            placeholder="Task Details"
+            value={taskDetails}
+            onChangeText={setTaskDetails}
+            style={styles.textArea}
+            multiline
+            placeholderTextColor={COLORS.textSecondary}
+          />
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleUpdateTask}>
-          <Text style={styles.buttonText}>Update Task</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteTask}>
-          <Text style={styles.buttonText}>Delete Task</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.row}>
+          <View style={[styles.formGroup, { flex: 1, marginRight: SPACING.s }]}>
+            <Text style={styles.label}>Priority</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={taskPriority}
+                onValueChange={(itemValue) => setTaskPriority(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="High" value={1} color={COLORS.danger} />
+                <Picker.Item label="Medium" value={2} color={COLORS.warning} />
+                <Picker.Item label="Low" value={3} color={COLORS.success} />
+              </Picker>
+            </View>
+          </View>
 
-      <Modal
-        visible={showAttachmentModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowAttachmentModal(false)}
-      >
+          <View style={[styles.formGroup, { flex: 1, marginLeft: SPACING.s }]}>
+            <Text style={styles.label}>Status</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={taskStatus}
+                onValueChange={(itemValue) => setTaskStatus(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="Pending" value="Pending" />
+                <Picker.Item label="In Progress" value="Progress" />
+                <Picker.Item label="Done" value="Done" />
+              </Picker>
+            </View>
+          </View>
+        </View>
 
-<View style={styles.modalContainer}>
-  <View style={styles.modalContent}>
-    <Text style={styles.modalTitle}>Add Attachment</Text>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Due Date</Text>
+          <TouchableOpacity
+            style={styles.dateSelector}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <FontAwesome5 name="calendar-alt" size={18} color={COLORS.primary} />
+            <Text style={styles.dateSelectorText}>
+              {taskDate.toLocaleDateString()}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-    <TouchableOpacity style={styles.iconButton} onPress={handleTakePhoto}>
-      <Ionicons name="camera-outline" style={styles.iconButtonText} />
-      {/* <Text style={styles.iconButtonText}>Take Photo</Text> */}
-    </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={taskDate}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(false);
+              if (selectedDate) setTaskDate(selectedDate);
+            }}
+          />
+        )}
 
-    <TouchableOpacity style={styles.iconButton} onPress={handlePickImage}>
-      <Ionicons name="image-outline" style={styles.iconButtonText} />
-      {/* <Text style={styles.iconButtonText}>Attach from Gallery</Text> */}
-    </TouchableOpacity>
+        <View style={styles.formGroup}>
+          <View style={styles.attachmentHeader}>
+            <Text style={styles.label}>Attachments</Text>
+            <TouchableOpacity 
+              style={styles.addAttachmentBtn}
+              onPress={() => setShowAttachmentModal(true)}
+            >
+              <FontAwesome5 name="paperclip" size={14} color={COLORS.primary} />
+              <Text style={styles.addAttachmentText}>Add</Text>
+            </TouchableOpacity>
+          </View>
 
-    <TouchableOpacity style={styles.iconButton} onPress={handlePickFile}>
-      <MaterialIcons name="attach-file" style={styles.iconButtonText} />
-      {/* <Text style={styles.iconButtonText}>Attach a File</Text> */}
-    </TouchableOpacity>
+          {attachments.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.attachmentsList}>
+              {attachments.map((attachment, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={styles.attachmentItem}
+                  onPress={() => handleAttachmentPress(attachment)}
+                >
+                  <Image source={{ uri: attachment.uri }} style={styles.attachmentImg} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noAttachmentsText}>No attachments added yet</Text>
+          )}
+        </View>
 
-    <TouchableOpacity style={styles.iconButton} onPress={() => setShowAttachmentModal(false)}>
-      <Ionicons name="close" style={styles.iconButtonText}  />
-      {/* <Text style={styles.iconButtonText}>Cancel</Text> */}
-    </TouchableOpacity>
-  </View>
-</View>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={[styles.button, styles.updateButton]} onPress={handleUpdateTask}>
+            <Text style={styles.buttonText}>Update Task</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteTask}>
+            <Text style={styles.buttonText}>Delete Task</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
-      </Modal>
-
-    
-
-      <Modal
-        visible={showPreviewModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowPreviewModal(false)}
-      >
-        <View style={styles.previewModalContainer}>
-          <View style={styles.previewModalContent}>
-            {selectedAttachment && (
-              <Image
-                source={{ uri: selectedAttachment.uri }}
-                style={styles.previewImage}
-              />
-            )}
-
-            <View style={styles.previewButtonContainer}>
-              <TouchableOpacity onPress={handleDeleteAttachment}>
-              <Ionicons name="trash-outline" size={24} color="pink" />
+      {/* Attachment Source Modal */}
+      <Modal visible={showAttachmentModal} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Choose Source</Text>
+            <View style={styles.modalOptions}>
+              <TouchableOpacity style={styles.modalOption} onPress={handleTakePhoto}>
+                <View style={[styles.iconCircle, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="camera" size={24} color={COLORS.white} />
+                </View>
+                <Text style={styles.modalOptionText}>Camera</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleShareAttachment}>
-              <Ionicons name="share-outline" size={24} color="lightblue" />
+              <TouchableOpacity style={styles.modalOption} onPress={handlePickImage}>
+                <View style={[styles.iconCircle, { backgroundColor: COLORS.success }]}>
+                  <Ionicons name="image" size={24} color={COLORS.white} />
+                </View>
+                <Text style={styles.modalOptionText}>Gallery</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowPreviewModal(false)}>
-              <Ionicons name="close" size={24} color="grey" />
+              <TouchableOpacity style={styles.modalOption} onPress={handlePickFile}>
+                <View style={[styles.iconCircle, { backgroundColor: COLORS.warning }]}>
+                  <MaterialIcons name="attach-file" size={24} color={COLORS.white} />
+                </View>
+                <Text style={styles.modalOptionText}>File</Text>
               </TouchableOpacity>
             </View>
-
+            <TouchableOpacity onPress={() => setShowAttachmentModal(false)}>
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-
-
-    </View>
-    </ScrollView>
+      {/* Attachment Preview Modal */}
+      <Modal visible={showPreviewModal} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.previewContent}>
+            {selectedAttachment && (
+              <Image source={{ uri: selectedAttachment.uri }} style={styles.previewImage} resizeMode="contain" />
+            )}
+            <View style={styles.previewActions}>
+              <TouchableOpacity onPress={handleDeleteAttachment} style={styles.previewActionBtn}>
+                <Ionicons name="trash-outline" size={24} color={COLORS.danger} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleShareAttachment} style={styles.previewActionBtn}>
+                <Ionicons name="share-outline" size={24} color={COLORS.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowPreviewModal(false)} style={styles.previewActionBtn}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-   container: {
+  container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: COLORS.background,
   },
-  pickerContainer: {
-    marginBottom: 14,
+  scrollContent: {
+    padding: SPACING.l,
+  },
+  header: {
+    marginBottom: SPACING.xl,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.primary,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
+  formGroup: {
+    marginBottom: SPACING.l,
+  },
+  label: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.s,
+    fontWeight: '600',
   },
   input: {
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    paddingVertical: 8,
-    marginBottom: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.m,
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    ...SHADOWS.light,
   },
   textArea: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    marginBottom: 16,
-    textAlignVertical: 'top',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.m,
+    fontSize: 16,
+    fontFamily: FONTS.regular,
     minHeight: 100,
-    borderRadius: 8,
+    textAlignVertical: 'top',
+    ...SHADOWS.light,
   },
-  buttonContainer: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  button: {
-    backgroundColor: 'lightblue',
-    padding: 16,
-    borderRadius: 8,
-    flex: 1,
+  pickerWrapper: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...SHADOWS.light,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+  },
+  dateSelector: {
+    flexDirection: 'row',
     alignItems: 'center',
-    margin: 4,
+    backgroundColor: COLORS.white,
+    padding: SPACING.m,
+    borderRadius: 12,
+    ...SHADOWS.light,
   },
-  addButton: {
-    backgroundColor: 'lightblue',
-    padding: 15,
-    borderRadius: 8,
-    marginVertical: 8,
-  },
-  buttonTextD: {
-    color: 'white',
+  dateSelectorText: {
+    marginLeft: SPACING.s,
     fontSize: 16,
-    textAlign: 'center',
+    fontFamily: FONTS.regular,
+    color: COLORS.textPrimary,
+  },
+  attachmentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.s,
+  },
+  addAttachmentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: 6,
+    borderRadius: 20,
+    ...SHADOWS.light,
+  },
+  addAttachmentText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: COLORS.primary,
+  },
+  attachmentsList: {
+    flexDirection: 'row',
+    marginTop: SPACING.s,
+  },
+  attachmentItem: {
+    marginRight: SPACING.m,
+  },
+  attachmentImg: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+  },
+  noAttachmentsText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: SPACING.l,
+  },
+  button: {
+    flex: 1,
+    padding: SPACING.m,
+    borderRadius: 15,
+    alignItems: 'center',
+    ...SHADOWS.medium,
+  },
+  updateButton: {
+    backgroundColor: COLORS.primary,
+    marginRight: SPACING.s,
   },
   deleteButton: {
-    backgroundColor: 'pink',
+    backgroundColor: COLORS.danger,
+    marginLeft: SPACING.s,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
+    color: COLORS.white,
+    fontSize: 18,
+    fontFamily: FONTS.bubbles,
   },
-  dateText: {
-    fontSize: 16,
-    marginVertical: 8,
-    textAlign: 'center',
-    color: 'white',
-    backgroundColor: 'lightblue',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: SPACING.xl,
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 8,
-    width: '60%',
+    backgroundColor: COLORS.white,
+    borderRadius: 25,
+    padding: SPACING.xl,
     alignItems: 'center',
+    ...SHADOWS.medium,
   },
   modalTitle: {
-    fontSize: 18,
-    marginBottom: 20,
-    backgroundColor: 'lightblue',
-    borderRadius: 8,
-    padding: 8,
-    color: 'white'
+    fontSize: 20,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xl,
   },
-  attachmentsContainer: {
-    marginTop: 16,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  attachmentWrapper: {
-    position: 'relative',
-    margin: 5,
-  },
-  attachmentImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-  },
-  removeButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    padding: 5,
-  },
-  removeButtonText: {
-    color: 'white',
-    fontSize: 12,
-  },
-  attachmentsContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-    flexWrap: 'wrap',
-  },
-  attachmentImage: {
-    width: 50,
-    height: 50,
-    marginRight: 8,
-    marginBottom: 8,
-    borderRadius: 8,
-  },
-  previewModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  previewModalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '80%',
-  },
-  previewImage: {
-    width: '100%',
-    height: 200,
-    marginBottom: 16,
-  },
-  previewButtonContainer: {
+  modalOptions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
+    marginBottom: SPACING.xl,
   },
-  iconButton: {
-    flexDirection: 'row',
+  modalOption: {
     alignItems: 'center',
-    marginVertical: 5,
-    backgroundColor: 'lightblue',
-    borderRadius: 10,
-    padding: 5,
-
   },
-  iconButtonText: {
-    fontSize: 24,
-     color: 'white'
-
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.s,
+  },
+  modalOptionText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: COLORS.textPrimary,
+  },
+  modalCloseText: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.s,
+  },
+  previewContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 25,
+    padding: SPACING.m,
+    alignItems: 'center',
+    ...SHADOWS.medium,
+  },
+  previewImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 15,
+  },
+  previewActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingVertical: SPACING.m,
+  },
+  previewActionBtn: {
+    padding: SPACING.s,
   },
 });
 

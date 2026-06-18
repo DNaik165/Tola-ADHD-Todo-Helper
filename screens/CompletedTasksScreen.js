@@ -1,34 +1,48 @@
-//screens/CompletedTasksScreen.js
-
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SectionList, TouchableOpacity, Image  } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, Image } from 'react-native';
 import { TaskContext } from '../context/TaskContext';
 import { useNavigation } from '@react-navigation/native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { COLORS, FONTS, SHADOWS, SPACING } from '../utils/theme';
 
-const TaskItem = ({ task, onPress }) => (
-        <TouchableOpacity onPress={() => onPress(task)}>
-          <View style={styles.taskContainerT}>
-            <Text style={styles.taskName}>{task.taskName}</Text>
-            <Text style={styles.taskDetails}>{task.taskDetails}</Text>
-            <Text>Date: {task.date}</Text>
-            <Text>Status: {task.myStatus}</Text>
-            {/* <Text>Priority: {task.priority}</Text> */}
-            {task.attachments && task.attachments.length > 0 && (
-              <Image
-                source={{ uri: task.attachments[0].uri }}
-                style={styles.attachmentImage}
-              />
-            )}
+const TaskItem = ({ task, onPress }) => {
+  let priorityColor;
+  switch (task.priority) {
+    case 1: priorityColor = COLORS.danger; break;
+    case 2: priorityColor = COLORS.warning; break;
+    case 3: priorityColor = COLORS.success; break;
+    default: priorityColor = COLORS.primary;
+  }
+
+  return (
+    <TouchableOpacity onPress={() => onPress(task)} activeOpacity={0.8}>
+      <View style={[styles.taskCard, { borderLeftColor: priorityColor }]}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.taskName} numberOfLines={1}>{task.taskName}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: COLORS.success }]}>
+            <Text style={styles.statusText}>Done</Text>
           </View>
-        </TouchableOpacity>
-      );
+        </View>
+        
+        <Text style={styles.taskDetails} numberOfLines={2}>{task.taskDetails}</Text>
+        
+        <View style={styles.cardFooter}>
+          <View style={styles.dateContainer}>
+            <FontAwesome5 name="calendar-check" size={12} color={COLORS.textSecondary} />
+            <Text style={styles.dateText}>{task.date}</Text>
+          </View>
+          {task.attachments && task.attachments.length > 0 && (
+            <FontAwesome5 name="paperclip" size={12} color={COLORS.primary} />
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-      
 const categorizeCompletedTasks = (tasks) => {
-  
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
-  
   const getDateStr = (date) => date.toISOString().split('T')[0];
   
   const sevenDaysAgo = new Date(today);
@@ -75,12 +89,6 @@ const categorizeCompletedTasks = (tasks) => {
 
 const CompletedTasksScreen = () => {
   const navigation = useNavigation();
-  
-  const handleTaskPress = (task) => {
-    navigation.navigate('UpdateTask', { task });
-  };
-
-
   const { tasks } = useContext(TaskContext);
   const [categorizedTasks, setCategorizedTasks] = useState({
     today: [],
@@ -95,88 +103,130 @@ const CompletedTasksScreen = () => {
     setCategorizedTasks(tasksByCategory);
   }, [tasks]);
 
-  const renderTaskItem = ({ item }) => (
-    <TaskItem task={item} onPress={handleTaskPress} />
-  );
+  const handleTaskPress = (task) => {
+    navigation.navigate('UpdateTask', { task });
+  };
 
   const sections = [
     { title: "Today's", data: categorizedTasks.today },
-    { title: '7 Days Ago', data: categorizedTasks.sevenDaysAgo },
-    { title: '14 Days Ago', data: categorizedTasks.fourteenDaysAgo },
-    { title: '30 Days Ago', data: categorizedTasks.thirtyDaysAgo },
+    { title: 'Last 7 Days', data: categorizedTasks.sevenDaysAgo },
+    { title: 'Last 14 Days', data: categorizedTasks.fourteenDaysAgo },
+    { title: 'Last 30 Days', data: categorizedTasks.thirtyDaysAgo },
     { title: 'Older', data: categorizedTasks.older }
-  ];
+  ].filter(section => section.data.length > 0);
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <FontAwesome5 name="check-circle" size={50} color={COLORS.textSecondary} style={{ marginBottom: SPACING.m }} />
+      <Text style={styles.emptyText}>No completed tasks yet</Text>
+      <Text style={styles.emptySubText}>Keep going, you can do it!</Text>
+    </View>
+  );
 
   return (
-    <SectionList
-      sections={sections}
-      renderItem={renderTaskItem}
-      renderSectionHeader={({ section: { title } }) => (
-        <Text style={styles.sectionHeader}>{title}</Text>
-      )}
-      keyExtractor={(item) => item.id.toString()}
-      style={styles.container}
-    />
+    <View style={styles.container}>
+      <SectionList
+        sections={sections}
+        renderItem={({ item }) => <TaskItem task={item} onPress={handleTaskPress} />}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeaderContainer}>
+            <Text style={styles.sectionHeader}>{title}</Text>
+          </View>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.listContent}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
+  container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: COLORS.background,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+  listContent: {
+    padding: SPACING.m,
+  },
+  sectionHeaderContainer: {
+    backgroundColor: COLORS.background,
+    paddingVertical: SPACING.s,
+    marginTop: SPACING.m,
   },
   sectionHeader: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 10,
-    color: 'skyblue',
+    fontFamily: FONTS.bubbles,
+    color: COLORS.primary,
   },
-  taskContainerT: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 8,
-    marginRight: 10,
-    marginBottom: 20
+  taskCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SPACING.m,
+    marginVertical: SPACING.s,
+    borderLeftWidth: 5,
+    ...SHADOWS.light,
   },
-  taskContainer: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 8,
-    marginRight: 10,
-    borderWidth: 2,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.s,
   },
   taskName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'lightblue',
+    fontSize: 18,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: SPACING.s,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: SPACING.s,
+  },
+  statusText: {
+    fontSize: 10,
+    fontFamily: FONTS.regular,
+    color: COLORS.white,
   },
   taskDetails: {
     fontSize: 14,
-    color: 'gray',
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.s,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  date: {
-    fontSize: 14,
-    color: 'gray',
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  status: {
-    fontSize: 14,
-    color: 'green',
+  dateText: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    marginLeft: 4,
   },
-  description: {
-    marginTop: 8,
-    fontSize: 14,
-    color: 'black',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 100,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontFamily: FONTS.bubbles,
+    color: COLORS.textPrimary,
+  },
+  emptySubText: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.s,
   },
 });
 
