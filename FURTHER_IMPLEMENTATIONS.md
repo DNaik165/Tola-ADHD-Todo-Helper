@@ -1,4 +1,4 @@
-# Further Implementations & Improvements for ADHDAssist (adhdtm)
+# Further Implementations & Improvements for Tola (ADHDAssist)
 
 This document outlines the current status of the project, identified issues, and a roadmap for further implementations to enhance functionality, security, and maintainability.
 
